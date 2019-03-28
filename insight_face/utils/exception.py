@@ -1,0 +1,5 @@
+class EmptyTensorException(Exception):
+
+    pass
+
+

@@ -1,0 +1,3 @@
+[submodule "FaceDetector"]
+	path = FaceDetector
+	url = https://github.com/faciallab/FaceDetector.git
