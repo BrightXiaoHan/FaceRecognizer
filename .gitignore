@@ -120,5 +120,4 @@ dmypy.json
 
 # derivative files
 output/*
-!output/caffe_models/
-!output/converted/
+!output/README.md
