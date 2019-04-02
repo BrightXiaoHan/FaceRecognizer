@@ -13,10 +13,16 @@ Follow this instruction [FaceDetector Installation](./FaceDetector/README.md).
 ```
 python setup.py install
 ```
-#### Download the pre-trained model.
-Download from [pre-trained model](https://github.com/faciallab/Models/tree/master/InsightFace).
 
 ## Basic Usage
+#### Download the pre-trained model.
+Download from [pre-trained model](https://github.com/faciallab/Models/tree/master/InsightFace) and merge the part files
+
+```bash
+cat model_ir_se50.pth* > model_ir_se50.pth
+mv model_ir_se50.pth /path/to/FaceRecognizer/output/res50
+```
+
 ### FaceVerify
 Verify if they are the same person.
 
