@@ -1,0 +1,1 @@
+from insight_face.deploy.interface import FaceSearcher
