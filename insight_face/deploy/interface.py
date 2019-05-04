@@ -17,14 +17,14 @@ from insight_face.utils.func import img_transform
 
 class FaceSearcher(object):
 
-    def __init__(self, backbone, device='cpu', **kwargs):
+    def __init__(self, backbone, caffe_model_path, device='cpu', **kwargs):
 
         self.net = get_by_name(backbone, **kwargs)
         self.device = torch.device(device)
         self.net.to(device)
         self.net.eval()
 
-        pnet, rnet, onet = get_net_caffe("FaceDetector/output/converted")
+        pnet, rnet, onet = get_net_caffe(caffe_model_path)
         self.detector = FaceDetector(pnet, rnet, onet, device=device)
         self.batch_detector = BatchImageDetector(pnet, rnet, onet, device=device)
 
