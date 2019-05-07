@@ -284,6 +284,18 @@ class FaceSearcher(object):
         )
 
     def search(self, image, face_bank='default'):
+        """Search all faces detected in given image.
+        
+        Args:
+            image (str or np.ndarray): Image path or numpy array returned by cv2.imread.
+            face_bank (str, optional): Search targets added by "add_face_bank" method. Defaults to 'default'.
+        
+        Raises:
+            NoSuchNameException: Quote wbefore specifying
+        
+        Returns:
+            tuple: faces list of (112, 112, 3), names (list), best_sim (list), boxes(list), landmarks(list)
+        """
         if face_bank not in self.banks:
             raise NoSuchNameException("No face bank named %s. You can add face bank by add_face_bank method." % face_bank)
 
@@ -316,6 +328,24 @@ class FaceSearcher(object):
 
         return faces, names, best_sim, boxes, landmarks
 
+    def search_aligned_faces(self, face_img, face_bank="default"):
+        bank = self.banks[face_bank]
 
+        emb = self.get_embedding(face_img)
+        target_emb = bank.feature_matrix
+
+        best_sim, sim_index = self.cosine_sim(emb, target_emb)
+
+        threshold_mask = best_sim >= self.recog_params.one2many_threshold
+        best_sim = best_sim[threshold_mask].cpu().numpy().tolist()
+        sim_index = sim_index[threshold_mask].cpu().numpy().tolist()
+        names = [bank.index2name[i] for i in sim_index]
+
+        face_image_index = threshold_mask.nonzero().squeeze().cpu().numpy().tolist()
+        if isinstance(face_image_index, int):
+            face_image_index = [face_image_index]
+        faces = [face_img[i] for i in face_image_index]
+
+        return faces, names, best_sim
 
 

@@ -8,7 +8,7 @@ from insight_face.deploy.interface import FaceSearcher
 class TestInterface(unittest.TestCase):
 
     def setUp(self):
-        self.searcher = FaceSearcher("Resnet", num_layers=50, device="cuda:0")
+        self.searcher = FaceSearcher("Resnet",caffe_model_path="./FaceDetector/output/converted", num_layers=50, device="cuda:0")
         self.searcher.load_state('./output/res50/model_ir_se50.pth', 50)
         self.reba_set = [cv2.imread(i) for i in glob.glob("tests/assets/reba/*.jpg")]
         self.nazha_set = [cv2.imread(i) for i in glob.glob("tests/assets/nazha/*.jpg")]
@@ -38,3 +38,8 @@ class TestInterface(unittest.TestCase):
         faces, names, best_sim, _, _ = self.searcher.search(self.multi_face_img, 'test')
         for name in names:
             print("Detect %s in image." % name)
+
+    def test_search_aligned_face(self):
+        self.searcher.add_face_bank(self.face_bank_dir, force_reload=True, bank_name='test')
+        faces, names, best_sim = self.searcher.search_aligned_faces([self.aligned_img], face_bank="test")
+        self.assertEqual(names[0], 'reba')
