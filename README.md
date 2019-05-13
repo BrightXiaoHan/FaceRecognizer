@@ -61,8 +61,15 @@ result
 
 ### Match
 Match the person between two pictures.
-```
-source, target, sim = self.searcher.match(face1, multi_face_img)
+```python
+source, target, sim = searcher.match(face1, multi_face_img)
 cv2.imshow("source", source[0])
 cv2.imshow("matched", target[0])
+```
+
+### Get embedding vectors
+Get the raw embedding vectors of faces in given image.
+```python
+# expect a tensor shape with (3, 512)
+emb = searcher.embedding_faces_in_the_wild(multi_face_img)
 ```
