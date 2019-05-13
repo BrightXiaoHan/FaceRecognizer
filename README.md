@@ -16,7 +16,7 @@ python setup.py install
 
 ## Basic Usage
 #### Download the pre-trained model.
-Download from [pre-trained model](https://github.com/faciallab/Models/tree/master/InsightFace) and merge the part files
+Download from [pre-trained model](http://118.31.44.251:3000/DeepInsight/Models) and merge the part files
 
 ```bash
 cat model_ir_se50.pth* > model_ir_se50.pth
