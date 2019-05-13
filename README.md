@@ -71,5 +71,5 @@ cv2.imshow("matched", target[0])
 Get the raw embedding vectors of faces in given image.
 ```python
 # expect a tensor shape with (3, 512)
-emb = searcher.embedding_faces_in_the_wild(multi_face_img)
+emb, boxes, landmarks = searcher.embedding_faces_in_the_wild(multi_face_img)
 ```

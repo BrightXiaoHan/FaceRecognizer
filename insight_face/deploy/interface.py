@@ -470,4 +470,4 @@ class FaceSearcher(object):
 
         emb = self.get_embedding(face_img)
 
-        return emb
+        return emb, source_boxes, source_landmarks

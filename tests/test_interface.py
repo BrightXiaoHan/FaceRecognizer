@@ -54,5 +54,5 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(len(sim), 1)
 
     def test_embedding_in_the_wild(self):
-        emb = self.searcher.embedding_faces_in_the_wild(self.multi_face_img)
+        emb, boxes, landmarks = self.searcher.embedding_faces_in_the_wild(self.multi_face_img)
         self.assertEqual(emb.shape[1], 512)
