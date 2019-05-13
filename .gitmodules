@@ -1,3 +1,0 @@
-[submodule "FaceDetector"]
-	path = FaceDetector
-	url = http://118.31.44.251:3000/DeepInsight/mtcnn-pytorch.git

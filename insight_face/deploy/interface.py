@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 from collections import OrderedDict
+from scipy.optimize import linear_sum_assignment
 
 from mtcnn import FaceDetector, BatchImageDetector, get_net_caffe, align_multi
 from insight_face.network import get_by_name
@@ -100,12 +101,13 @@ class FaceSearcher(object):
         source_embs = self.net(tensors)
         return source_embs
 
-    def cosine_sim(self, source_embs, target_embs):
+    def cosine_sim(self, source_embs, target_embs, _reduce_max=True):
         """
 
         Args:
             source_embs (torch.Tensor): shape [n, emb_dim]
             target_embs (torch.Tensor): shape [m, emb_dim]
+            _reduce_max (bool): Internal parameter, don't use it.
 
         Returns:
             (torch.Tensor, torch.Tensor): nearest cosine distance and index of target.
@@ -117,10 +119,14 @@ class FaceSearcher(object):
         source_embs = torch.stack([source_embs] * target_shape, 1)
         target_embs = torch.stack([target_embs] * source_shape, 0)
         sim = torch.nn.functional.cosine_similarity(source_embs, target_embs, 2)
+        
+        if _reduce_max:
+            best_sim, sim_index = sim.max(1)
 
-        best_sim, sim_index = sim.max(1)
-
-        return best_sim, sim_index
+            return best_sim, sim_index
+        
+        else:
+            return sim
 
     @no_grad
     def verify(self, source, target, aligned=False):
@@ -348,4 +354,108 @@ class FaceSearcher(object):
 
         return faces, names, best_sim
 
+    def recognize_and_identify_strangers(self, image, face_bank='default', stranger_identifier='stranger'):
+        """Search all faces detected in given image. Recognize acquaintance and identify strangers.
+        
+        Args:
+            image (str or np.ndarray): Image path or numpy array returned by cv2.imread.
+            face_bank (str, optional): Search targets added by "add_face_bank" method. Defaults to 'default'.
+        
+        Raises:
+            NoSuchNameException: Quote wbefore specifying
+        
+        Returns:
+            acquaintance: faces list of (112, 112, 3), names (list), best_sim (list), boxes(list), landmarks(list)
+            stranger: faces list of (112, 112, 3), names (list), best_sim (list), boxes(list), landmarks(list)
+        """
+        if face_bank not in self.banks:
+            raise NoSuchNameException("No face bank named %s. You can add face bank by add_face_bank method." % face_bank)
+
+        bank = self.banks[face_bank]
+
+        detect = lambda x: self.detector.detect(x, **self.multi_face_detect_params)
+        source_boxes, source_landmarks = detect(image)
+
+        if len(source_boxes) == 0:
+            return [], [], [], [], []
+
+        _, face_img = align_multi(image, source_boxes, source_landmarks)
+
+        emb = self.get_embedding(face_img)
+        target_emb = bank.feature_matrix
+
+        sims, indexes = self.cosine_sim(emb, target_emb)
+
+        # acquaintace 
+        threshold_mask = sims >= self.recog_params.one2many_threshold
+        best_sim = sims[threshold_mask].cpu().numpy().tolist()
+        sim_index = indexes[threshold_mask].cpu().numpy().tolist()
+        landmarks = source_landmarks[threshold_mask].cpu().numpy().tolist()
+        boxes = source_boxes[threshold_mask].cpu().numpy().tolist()
+        names = [bank.index2name[i] for i in sim_index]
+
+        face_image_index = threshold_mask.nonzero().squeeze().cpu().numpy().tolist()
+        if isinstance(face_image_index, int):
+            face_image_index = [face_image_index]
+        faces = [face_img[i] for i in face_image_index]
+
+        acquaintance = [faces, names, best_sim, boxes, landmarks]
+
+        # stranger
+        threshold_mask = sims <= self.recog_params.stranger_threshold
+        best_sim = sims[threshold_mask].cpu().numpy().tolist()
+        sim_index = indexes[threshold_mask].cpu().numpy().tolist()
+        landmarks = source_landmarks[threshold_mask].cpu().numpy().tolist()
+        boxes = source_boxes[threshold_mask].cpu().numpy().tolist()
+        names = [stranger_identifier] * len(sim_index)
+
+        face_image_index = threshold_mask.nonzero().squeeze().cpu().numpy().tolist()
+        if isinstance(face_image_index, int):
+            face_image_index = [face_image_index]
+        faces = [face_img[i] for i in face_image_index]
+
+        stranger = [faces, names, best_sim, boxes, landmarks]
+
+        return acquaintance, stranger
+
+         
+    def match(self, source, target):
+        """Match the most similar person between two images. (hungarian algorithm)
+        
+        Args:
+            source (np.ndarray): Image matrix returned by cv2.imread.
+            target (np.ndarray): Image matrix returned by cv2.imread.
+
+        Returns:
+            Match list [source_face, target_face, similarity]  
+        """
+        detect = lambda x: self.detector.detect(x, **self.multi_face_detect_params)
+        source_boxes, source_landmarks = detect(source)
+        target_boxes, target_landmarks = detect(target)
+
+        if len(source_boxes) == 0 or len(target_boxes) == 0:
+            return []
+
+        _, source_faces = align_multi(source, source_boxes, source_landmarks)
+        _, target_faces = align_multi(target, target_boxes, target_landmarks)
+
+
+        source_emb = self.get_embedding(source_faces)
+        target_emb = self.get_embedding(target_faces)
+
+        
+        sims = self.cosine_sim(source_emb, target_emb, _reduce_max=False).cpu().numpy()
+        row_ind, col_ind = linear_sum_assignment(-sims)
+        match_sim = sims[row_ind, col_ind]
+
+        source_faces = source_faces[row_ind]
+        target_faces = target_faces[col_ind]
+
+        # filter 
+        mask = match_sim >= self.recog_params.many2many_threshold
+        match_sim = match_sim[mask]
+        source_faces = source_faces[mask]
+        target_faces = target_faces[mask]
+
+        return source_faces, target_faces, match_sim
 
