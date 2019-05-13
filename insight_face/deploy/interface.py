@@ -459,3 +459,15 @@ class FaceSearcher(object):
 
         return source_faces, target_faces, match_sim
 
+    def embedding_faces_in_the_wild(self, img):
+        detect = lambda x: self.detector.detect(x, **self.multi_face_detect_params)
+        source_boxes, source_landmarks = detect(img)
+
+        if len(source_boxes) == 0:
+            return torch.empty((0, 512))
+
+        _, face_img = align_multi(img, source_boxes, source_landmarks)
+
+        emb = self.get_embedding(face_img)
+
+        return emb

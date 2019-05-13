@@ -8,7 +8,7 @@ from insight_face.deploy.interface import FaceSearcher
 class TestInterface(unittest.TestCase):
 
     def setUp(self):
-        self.searcher = FaceSearcher("Resnet",caffe_model_path="./FaceDetector/output/converted", num_layers=50, device="cuda:0")
+        self.searcher = FaceSearcher("Resnet",caffe_model_path="./output/caffe", num_layers=50, device="cuda:0")
         self.searcher.load_state('./output/res50/model_ir_se50.pth', 50)
         self.reba_set = [cv2.imread(i) for i in glob.glob("tests/assets/reba/*.jpg")]
         self.nazha_set = [cv2.imread(i) for i in glob.glob("tests/assets/nazha/*.jpg")]
@@ -52,3 +52,7 @@ class TestInterface(unittest.TestCase):
     def test_match(self):
         source, target, sim = self.searcher.match(self.reba_set[0], self.multi_face_img)
         self.assertEqual(len(sim), 1)
+
+    def test_embedding_in_the_wild(self):
+        emb = self.searcher.embedding_faces_in_the_wild(self.multi_face_img)
+        self.assertEqual(emb.shape[1], 512)
