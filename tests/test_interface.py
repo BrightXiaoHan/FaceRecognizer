@@ -43,3 +43,12 @@ class TestInterface(unittest.TestCase):
         self.searcher.add_face_bank(self.face_bank_dir, force_reload=True, bank_name='test')
         faces, names, best_sim = self.searcher.search_aligned_faces([self.aligned_img], face_bank="test")
         self.assertEqual(names[0], 'reba')
+
+    def test_recognize_and_identify_strangers(self):
+        self.searcher.add_face_bank(self.face_bank_dir, force_reload=True, bank_name='test')
+        aquaintance, stranger = self.searcher.recognize_and_identify_strangers(self.multi_face_img, 'test')
+        self.assertEqual(aquaintance[1][0], 'reba')
+
+    def test_match(self):
+        source, target, sim = self.searcher.match(self.reba_set[0], self.multi_face_img)
+        self.assertEqual(len(sim), 1)
