@@ -35,7 +35,7 @@ class FaceSearcher(object):
             threshold=[0.5, 0.6, 0.7],
             factor=0.7,
             minsize=48,
-            nms_threshold=[0.7, 0.7, 0]
+            nms_threshold=[0.7, 0.7, 0.]
         )
 
         self.multi_face_detect_params = easydict.EasyDict(
