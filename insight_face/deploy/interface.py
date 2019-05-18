@@ -377,7 +377,7 @@ class FaceSearcher(object):
         source_boxes, source_landmarks = detect(image)
 
         if len(source_boxes) == 0:
-            return [], [], [], [], []
+            return [[], [], [], [], []], [[], [], [], [], []]
 
         _, face_img = align_multi(image, source_boxes, source_landmarks)
 
