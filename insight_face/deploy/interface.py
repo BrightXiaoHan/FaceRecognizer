@@ -418,6 +418,41 @@ class FaceSearcher(object):
 
         return acquaintance, stranger
 
+    def identify_strangers_aligned(self, face_img, face_bank="default", stranger_identifier='stranger'):
+        bank = self.banks[face_bank]
+
+        emb = self.get_embedding(face_img)
+        target_emb = bank.feature_matrix
+
+        sims, indexes = self.cosine_sim(emb, target_emb)
+
+        # acquaintace 
+        threshold_mask = sims >= self.recog_params.one2many_threshold
+        best_sim = sims[threshold_mask].cpu().numpy().tolist()
+        sim_index = indexes[threshold_mask].cpu().numpy().tolist()
+        names = [bank.index2name[i] for i in sim_index]
+
+        face_image_index = threshold_mask.nonzero().squeeze().cpu().numpy().tolist()
+        if isinstance(face_image_index, int):
+            face_image_index = [face_image_index]
+        faces = [face_img[i] for i in face_image_index]
+
+        acquaintance = [faces, names, best_sim]
+
+        # stranger
+        threshold_mask = sims <= self.recog_params.stranger_threshold
+        best_sim = sims[threshold_mask].cpu().numpy().tolist()
+        sim_index = indexes[threshold_mask].cpu().numpy().tolist()
+        names = [stranger_identifier] * len(sim_index)
+
+        face_image_index = threshold_mask.nonzero().squeeze().cpu().numpy().tolist()
+        if isinstance(face_image_index, int):
+            face_image_index = [face_image_index]
+        faces = [face_img[i] for i in face_image_index]
+
+        stranger = [faces, names, best_sim]
+        return acquaintance, stranger
+
          
     def match(self, source, target):
         """Match the most similar person between two images. (hungarian algorithm)

@@ -56,3 +56,10 @@ class TestInterface(unittest.TestCase):
     def test_embedding_in_the_wild(self):
         emb, boxes, landmarks = self.searcher.embedding_faces_in_the_wild(self.multi_face_img)
         self.assertEqual(emb.shape[1], 512)
+
+    def test_identify_strangers_aligned(self):
+        self.searcher.add_face_bank(self.face_bank_dir, force_reload=True, bank_name='test')
+        acquaintance, stranger = self.searcher.identify_strangers_aligned([self.aligned_img], face_bank="test")
+
+        self.assertEqual(len(acquaintance[1]), 1)
+        self.assertEqual(len(stranger[1]), 0)
